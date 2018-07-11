@@ -155,9 +155,26 @@ var OktaSignIn = (function () {
       .fail(handlers.defaultErrorHandler());
     }
 
+    /**
+     * Renders the Widget given a set options
+     * @param options - options for the signin widget (OAuth focus).
+     *        Must have an el property to render the widget to.
+     *        Does not currently support IDPs outside of Okta
+     */
+    function showSignInToGetTokens(options) {
+      console.log('in show'); //eslint-disable-line
+      var renderOptions = Util.filterOAuthParams(options, config);
+
+      // Get token storage keys (if provided)
+      var keys = options.tokenStorageKeys || { accessToken: 'accessToken', idToken: 'idToken' };
+
+      return render(renderOptions, handlers.defaultSuccessTokenHandler(authClient.tokenManager, keys));
+    }
+
     // Properties exposed on OktaSignIn object.
     return {
       renderEl: render,
+      showSignInToGetTokens: showSignInToGetTokens,
       signOut: closeSession,
       idToken: {
         refresh: refreshIdToken

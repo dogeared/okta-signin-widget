@@ -101,6 +101,51 @@ define(['okta', 'util/Logger'], function (Okta, Logger) {
     Logger.warn(`\n${message.replace(/^(\s)+/gm, '')}`);
   };
 
+  Util.filterOAuthParams = function(options, config) {
+    // Override specific OAuth/OIDC values
+    var renderOptions = _.extend(
+      {
+        authParams: {
+          responseType: []
+        }
+      },
+      config,
+      options
+    );
+
+    if (options.getAccessToken && renderOptions.authParams.responseType.indexOf('token') === -1) {
+      renderOptions.authParams.responseType.push('token');
+    }
+
+    if (options.getIdToken && renderOptions.authParams.responseType.indexOf('id_token') === -1) {
+      renderOptions.authParams.responseType.push('id_token');
+    }
+
+    // Remove keys
+    delete renderOptions.getIdToken;
+    delete renderOptions.getAccessToken;
+
+    // List of ignored params
+    var ignore = [
+      'el',
+      'getIdToken', 'getAccessToken',
+      'baseUrl', 'clientId', 'redirectUri',
+      'oAuthTimeout', 'tokenStorageKeys'
+    ];
+
+    // Copy over any additional options as OAuth/OIDC options
+    _.extend(renderOptions.authParams, _.omit(options, ignore));
+
+    // Remove top-level keys that are included in authParams
+    Object.keys(renderOptions).map(function(key) {
+      if(renderOptions.authParams && renderOptions.authParams[key]) {
+        delete renderOptions[key];
+      }
+    });
+
+    return renderOptions;
+  };
+
   return Util;
 
 });

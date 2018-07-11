@@ -133,6 +133,89 @@ define(['util/Util', 'util/Logger'], function (Util, Logger) {
       });
     });
 
+    describe('filterOAuthParams', function () {
+      it('returns top-level configuration if no overrides are provided', function () {
+        var config = {
+          baseUrl: 'foo',
+          authParams: {
+            bar: 'bazz'
+          }
+        };
+
+        expect(Util.filterOAuthParams({}, config)).toEqual({
+          baseUrl: 'foo',
+          authParams: {
+            bar: 'bazz'
+          }
+        });
+      });
+
+      it('overrides top-level configuration when overrides are provided', function () {
+        var config = {
+          baseUrl: 'foo',
+          authParams: {
+            bar: 'bazz'
+          }
+        };
+        var options = {
+          baseUrl: 'bazz',
+          bar: 'foo'
+        };
+        expect(Util.filterOAuthParams(options, config)).toEqual({
+          baseUrl: 'bazz',
+          authParams: {
+            bar: 'foo'
+          }
+        });
+      });
+
+      it('updates the responseType given getAccessToken and getIdToken keys', function () {
+        var config = {
+          baseUrl: 'foo'
+        };
+        var options = {
+          getAccessToken: true,
+          getIdToken: true
+        };
+        expect(Util.filterOAuthParams(options, config)).toEqual({
+          baseUrl: 'foo',
+          authParams: {
+            responseType: ['token', 'id_token']
+          }
+        });
+      });
+
+      it('returns a complex object, overriding the basic Widget configuration option', function () {
+        var config = {
+          baseUrl: 'foo',
+          clientId: 'cid',
+          authParams: {
+            responseType: ['id_token'],
+            scopes: ['openid']
+          }
+        };
+        var options = {
+          getAccessToken: true,
+          oAuthTimeout: 3000,
+          scopes: ['openid', 'profile'],
+          clientId: 'bar',
+          display: 'page'
+        };
+        var renderOptions = Util.filterOAuthParams(options, config);
+
+        // Verify object contains all the following key/value pairs
+        expect(renderOptions).toEqual(jasmine.objectContaining({ baseUrl: 'foo' }));
+        expect(renderOptions).toEqual(jasmine.objectContaining({ clientId: 'bar' }));
+        expect(renderOptions).toEqual(jasmine.objectContaining({ oAuthTimeout: 3000 }));
+        expect(renderOptions.authParams).toEqual(jasmine.objectContaining({
+          // 'token' should sppear second in the list - since it was added after the initial 'id_token'
+          responseType: ['id_token', 'token'],
+          scopes: ['openid', 'profile'],
+          display: 'page'
+        }));
+      });
+    });
+
   });
 
 });
